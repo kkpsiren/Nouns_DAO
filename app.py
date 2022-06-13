@@ -5,8 +5,8 @@ from beautify import flipside_logo, discord_logo
 import os
 
 from traits import *
-from dotenv import load_dotenv
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 
 key = 'noun'
 df = get_traits(key)
