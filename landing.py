@@ -190,10 +190,10 @@ yet an established secondary market since only ~340 Nouns have been minted.
 - Other frequently minted glasses 12 and 5 (blue glasses), sell with lower price than the green ones (17) (103 ETH vs 77 ETH and and 89 ETH )
 
 ### Queries used
-[settling_the_nouns_transactions](https://app.flipsidecrypto.com/velocity/queries/1abcd9e9-23ec-47ae-8d3c-c8e43e127e7e)
-[nft transfers](https://app.flipsidecrypto.com/velocity/queries/94811dd6-4a66-4bb6-9e86-49feae817816)
-[nft sales](https://app.flipsidecrypto.com/velocity/queries/38b06169-9f9b-4256-8396-b0ad8410528c)
-[nft mints](https://app.flipsidecrypto.com/velocity/queries/4cb81caa-4088-40e0-933d-d8a057603d0b)
+[settling_the_nouns_transactions](https://app.flipsidecrypto.com/velocity/queries/1abcd9e9-23ec-47ae-8d3c-c8e43e127e7e)   
+[nft transfers](https://app.flipsidecrypto.com/velocity/queries/94811dd6-4a66-4bb6-9e86-49feae817816)    
+[nft sales](https://app.flipsidecrypto.com/velocity/queries/38b06169-9f9b-4256-8396-b0ad8410528c)   
+[nft mints](https://app.flipsidecrypto.com/velocity/queries/4cb81caa-4088-40e0-933d-d8a057603d0b)   
 
 ### Github
 [https://github.com/kkpsiren/Nouns_DAO](https://github.com/kkpsiren/Nouns_DAO)
