@@ -4,7 +4,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt 
 import plotly.express as px
-from plots import number_plot, plot_dist,plot_dist_count
+from plots import number_plot, plot_dist,plot_dist_count,plot_settle1,plot_settle2
 
 # @st.cache()
 def get_pic(selected):
@@ -17,7 +17,7 @@ def get_merged(sales,df):
 cm = sns.light_palette("green", as_cmap=True)
 mint_address = '0x0bc3807ec262cb779b38d65b38158acc3bfede10'
 auction_house = '0x830bd73e4184cef73443c15111a1df14e495c706' 
-def landing_page(key, df,sales,transfers):
+def landing_page(key, df,sales,transfers,settler):
     st.image('nouns.png')
     st.markdown("""## Flipside Crypto <3 Nouns DAO
                 
@@ -31,11 +31,6 @@ For more details, see https://nouns.wtf/ & https://lilnouns.wtf/
 """)
     st.markdown(
         """
-        
-Every 10th Lil Noun for the first 5 years of the project will be sent to our multisig, where it will be vested and distributed to individual Nounders.
-
-Every 11th Lil Noun for the first 5 years of the project will be sent to the NounsDAO, where they'll be distributed to individual Nouns, Nounders, and community members alike.
-
 Part 1: 
 """)
     st.markdown(
@@ -163,7 +158,8 @@ Part 1:
             get_pic(int(single['TOKENID']))
             st.write(f"https://nouns.wtf/noun/{int(single['TOKENID'])}")
             
-  ###############      
+  ############### 
+    
     st.markdown(
         """
 ### PArt2: Who is typically settling Nouns auctions? 
@@ -173,11 +169,32 @@ Part 1:
 ### Does the winner settle the auction, or does an eager new bidder settle the current auction to begin the next auction?
 
     """)
-
+    
+    l,r = st.columns(2)
+    with l:
+        st.dataframe(settler)
+    with r:
+        st.pyplot(plot_settle1(settler), use_container_width=True)
+        st.pyplot(plot_settle2(settler), use_container_width=True)
     st.markdown(f""" ## Conclusion
-                
+
+- The winner nowadays settles the auctions less frequently than in the past
+- 2/3 times to eager new bidder does the settlement
+- There are many attributes in the traits class that have yet to be seen significant trading activity. 
+Thus it is hard to say whether there are attributes of traits that are more preferred than other ones.
+Noun 40 has been sold for 200ETH. This is exploding for many traits the average price as there is not 
+yet an established secondary market since only ~340 Nouns have been minted.
+- However we find a linear correlation showing that older Nouns tend to sell with higher amounts than newer ones.
+- Not one Noun has been sold more than 2 times.
+- Green Glasses tend to send in higher amounts than others. (these have been sold 17 times) but also minted 3 most frequent (7 times).
+- Other frequently minted glasses 12 and 5 (blue glasses), sell with lower price than the green ones (17) (103 ETH vs 77 ETH and and 89 ETH )
 
 ### Queries used
+[settling_the_nouns_transactions](https://app.flipsidecrypto.com/velocity/queries/1abcd9e9-23ec-47ae-8d3c-c8e43e127e7e)
+[nft transfers](https://app.flipsidecrypto.com/velocity/queries/94811dd6-4a66-4bb6-9e86-49feae817816)
+[nft sales](https://app.flipsidecrypto.com/velocity/queries/38b06169-9f9b-4256-8396-b0ad8410528c)
+[nft mints](https://app.flipsidecrypto.com/velocity/queries/4cb81caa-4088-40e0-933d-d8a057603d0b)
 
 ### Github
+[https://github.com/kkpsiren/Nouns_DAO](https://github.com/kkpsiren/Nouns_DAO)
     """)

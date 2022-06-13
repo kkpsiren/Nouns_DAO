@@ -49,7 +49,23 @@ def get_sales(key='noun'):
     df['BLOCK_TIMESTAMP'] = pd.to_datetime(df['BLOCK_TIMESTAMP'])
     df['TOKENID'] = df['TOKENID'].astype('int')
     return df.sort_values(by='BLOCK_TIMESTAMP',ascending=False)
-  
+
+def get_settler(key='noun'):
+    if key == 'noun':
+        url = 'https://node-api.flipsidecrypto.com/api/v2/queries/1abcd9e9-23ec-47ae-8d3c-c8e43e127e7e/data/latest'
+    else:
+        url = ''
+    r = requests.get(url)
+    if r.status_code==200:
+        df = pd.DataFrame(r.json())
+    else:
+        r = requests.get(url)
+        assert r.status_code==200
+    df = pd.DataFrame(r.json())
+    df['BLOCK_TIMESTAMP'] = pd.to_datetime(df['BLOCK_TIMESTAMP'])
+    df['TOKENID'] = df['TOKENID'].astype('int')
+    df = df[['BLOCK_TIMESTAMP','WHO_SETTLES','TOKENID','ORIGIN_FROM_ADDRESS']]
+    return df.sort_values(by='BLOCK_TIMESTAMP',ascending=False)
 
 if __name__ == '__main__':
     key='noun'

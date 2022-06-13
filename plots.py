@@ -168,6 +168,17 @@ def plot_dist(a):
     fig['layout']['yaxis']['title']='Mean Price'
     return fig, mean
 
+def plot_settle1(df):
+    fig, ax = plt.subplots()
+    df.groupby('WHO_SETTLES')['TOKENID'].count().plot.bar(ax=ax)
+    return fig
+
+def plot_settle2(df):
+    fig, ax = plt.subplots()
+    df.plot.scatter(x='BLOCK_TIMESTAMP',y='WHO_SETTLES',ax=ax)
+    plt.xticks(rotation=45)
+    return fig
+
 
 def plot_dist_count(a):
     mean = a['count'].mean()
