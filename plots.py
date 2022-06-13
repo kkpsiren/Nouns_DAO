@@ -6,7 +6,8 @@ import seaborn as sns
 from scipy.cluster import hierarchy
 from scipy.spatial.distance import pdist
 import streamlit as st
-
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 def plot_strip(data,x,y,scale=False):
     fig,ax = plt.subplots()
@@ -47,13 +48,80 @@ def cluster_plot(data):
     return g.fig, groups
 
 
-def number_plot(df):
-    fig,ax = plt.subplots()
-    df.reset_index()['TOKENID'].plot(ax=ax)
+def number_plot(df,mint):
+    ser = df['TOKENID'].value_counts().sort_values(ascending=False)
+    # fig,(ax,ax1) = plt.subplots(ncols=2,figsize=(12,4))
+    a = ser.to_frame('counts').reset_index()
+    a = a.rename({'index':'TOKENID'},axis=1)
+    a = a.reset_index()
+    a['last_sold'] = a['TOKENID'].map(df.groupby('TOKENID')['BLOCK_TIMESTAMP'].max())
+    a['minted'] = a['TOKENID'].map(mint.groupby('TOKENID')['BLOCK_TIMESTAMP'].min())
+    a['diff'] = (a['last_sold'] - a['minted']).dt.days
+    a['price'] = a['TOKENID'].map(df.sort_values('BLOCK_TIMESTAMP',ascending=False).groupby('TOKENID')['PRICE'].first())
+    # a['diff'] = a['last_sold'] - a['minted']
+    # a['counts'].plot(ax=ax)
+
+
+    fig = make_subplots(rows=2, cols=2)
+
+    fig.add_trace(
+        go.Scatter(x=a['index'].tolist(), 
+                   y=a['counts'].tolist(),
+                   hovertemplate =
+                    '<i>Number of Sales</i>: %{y:.0f}<br>'+
+                    '%{text}',
+                   text = [f'<b>Token ID</b>: {k}<br><b>Last Sale</b>: {i}<br><b>Minted</b>: {j}' for k,i,j in zip(a['TOKENID'].tolist(), a['last_sold'].tolist(),a['minted'].tolist())],
+                   
+                   showlegend = False),
+        row=1, col=1
+    )
+
+    fig.add_trace(
+        go.Scatter(x=a['TOKENID'].tolist(), 
+                   y=a['counts'].tolist(),
+                   mode="markers",
+                   hovertemplate =
+                    '<br><b>Token ID</b>: %{x}<br>'+
+                    '<i>Number of Sales</i>: %{y:.0f}<br>'+
+                    '%{text}',
+                   text = [f'<b>Last Sale</b>: {i}<br><b>Minted</b>: {j}' for i,j in zip(a['last_sold'].tolist(),a['minted'].tolist())],
+    
+                   showlegend = False),
+        row=1, col=2,
+        
+    )
+
+    fig.add_trace(
+        go.Scatter(x=a['diff'].tolist(), 
+                   y=a['price'].tolist(),
+                   mode="markers",
+                   hovertemplate =
+                   '<i>Minted %{x:.0f} days before Sold</i><br>'+
+                    '<br><b>Last Price</b>: %{y:.2f} ETH<br>'+
+                    '%{text}',
+                   text = [f'<b>Token ID</b>: {k}<br><b>Last Sale</b>: {i}<br><b>Minted</b>: {j}' for k,i,j in zip(a['TOKENID'].tolist(),a['last_sold'].tolist(),a['minted'].tolist())],
+    
+                   showlegend = False),
+        row=2, col=1,
+        
+    )
+
+
+    fig.update_layout(height=800, width=800, title_text="Sales")
+    fig['layout']['xaxis']['title']='Index'
+    fig['layout']['yaxis']['title']='Number of Sales'
+    fig['layout']['xaxis2']['title']='Token ID'
+    fig['layout']['yaxis2']['title']='Number of Sales'
+    fig['layout']['xaxis3']['title']='Days since Mint'
+    fig['layout']['yaxis3']['title']='Price (ETH)'
     #plt.xticks([])
-    plt.xlabel('Addresses')
-    plt.ylabel('Number of NFTs Minted')
-    sns.despine(fig=fig)
+    # ax.set_xlabel('Number of NFTs')
+    # ax.set_ylabel('Number Sales')
+    # a.plot.scatter(x='TOKENID',y='counts',ax=ax1)
+    # ax1.set_ylabel('Number Sales')
+    # ax1.set_xlabel('TokenID')
+
+    #sns.despine(fig=fig)
     return fig
 
 
@@ -65,6 +133,75 @@ def nft_plot(df):
     plt.ylabel('Number of NFTs Bought')
     sns.despine(fig=fig)
     return fig
+
+def plot_dist(a):
+    mean = a['mean'].mean()
+    first_idx = a.columns[0]
+    string = f'<br><b>{first_idx}</b>: '
+    fig = make_subplots(rows=1, cols=1)
+
+    fig.add_trace(
+        go.Bar(x=a[first_idx].tolist(), 
+                   y=a['mean'].tolist(),
+                   hovertemplate =
+                    string + '%{x}<br>'+
+                    '<i>Median Price</i>: %{y:.2f} ETH<br>'+
+                    '%{text}',
+                   text = [f'<br><b>Number of Sales</b>: {i}' for i in a['count'].tolist()],
+                   
+                   showlegend = False),
+        row=1, col=1
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+                   x=a[first_idx].tolist(), 
+                   y=[mean for k in a['mean'].tolist()],
+                   name='mean',
+                   showlegend = False
+                   ),
+            row=1, col=1
+    )
+
+    fig.update_layout(height=400, width=400, title_text="Sales")
+    fig['layout']['xaxis']['title']=f'{first_idx} Type'
+    fig['layout']['yaxis']['title']='Mean Price'
+    return fig, mean
+
+
+def plot_dist_count(a):
+    mean = a['count'].mean()
+    first_idx = a.columns[0]
+    string = f'<br><b>{first_idx}</b>: '
+    fig = make_subplots(rows=1, cols=1)
+
+    fig.add_trace(
+        go.Bar(x=a[first_idx].tolist(), 
+                   y=a['count'].tolist(),
+                   hovertemplate =
+                    string + '%{x}<br>'+
+                    '<i>Count</i>: %{y:.0f} times<br>',
+                    #'%{text}',
+                   #text = [f'<br><b>Number of Sales</b>: {i}' for i in a['count'].tolist()],
+                   
+                   showlegend = False),
+        row=1, col=1
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+                   x=a[first_idx].tolist(), 
+                   y=[mean for k in a['count'].tolist()],
+                   name='mean count',
+                   showlegend = False
+                   ),
+            row=1, col=1
+    )
+
+    fig.update_layout(height=400, width=400, title_text="Mints")
+    fig['layout']['xaxis']['title']=f'{first_idx} Type'
+    fig['layout']['yaxis']['title']='Count'
+    return fig, mean
 
 
 def plot_scatter(df):

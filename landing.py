@@ -1,15 +1,25 @@
+from this import s
 import streamlit as st
 import pandas as pd 
 import seaborn as sns
 import matplotlib.pyplot as plt 
 import plotly.express as px
+from plots import number_plot, plot_dist,plot_dist_count
 
+# @st.cache()
+def get_pic(selected):
+    st.image(f'https://noun.pics/{selected}.jpg')
+
+@st.cache()
+def get_merged(sales,df):
+    return sales.merge(df,how='left',on='TOKENID')
+    
 cm = sns.light_palette("green", as_cmap=True)
 mint_address = '0x0bc3807ec262cb779b38d65b38158acc3bfede10'
 auction_house = '0x830bd73e4184cef73443c15111a1df14e495c706' 
 def landing_page(key, df,sales,transfers):
-    st.image('https://openseauserdata.com/files/e22c98856cf40d4efb9d2dcb69d25c9b.png')
-    st.markdown("""## Flipside Crypto: Nouns DAO
+    st.image('nouns.png')
+    st.markdown("""## Flipside Crypto <3 Nouns DAO
                 
 ### Intro
 
@@ -33,8 +43,11 @@ Part 1:
 ### Analyze the mint and secondary NFT marketplace activity for Nouns DAO. 
 """)
     
-    options = sorted(df['TOKENID'].unique())
-    selected = st.selectbox('Select Noun', options[::-1],0)
+    
+    selected = st.number_input('Select Noun', min_value=df['TOKENID'].min(), 
+                               max_value=df['TOKENID'].max(),
+                               value=df['TOKENID'].max())
+    
     transfers_selected = transfers.query('(TOKENID==@selected) & (EVENT_TYPE=="other")').drop(['EVENT_TYPE','TOKENID'],axis=1)
     sales_selected = sales.query('TOKENID==@selected')
     current_address = transfers_selected.sort_values('BLOCK_TIMESTAMP',ascending=False)['NFT_TO_ADDRESS'].iloc[0]
@@ -44,7 +57,8 @@ Part 1:
         current_owner = 'Nouns DAO: Nouns Auction House Proxy'
     else:
         current_owner = current_address
-    st.image(f'https://noun.pics/{selected}.jpg')
+    get_pic(selected)
+    st.write(f'https://nouns.wtf/noun/{selected}')
     
     st.markdown(f"""{key} {selected} current_owner: [{current_owner}](https://etherscan.io/address/{current_address})  
 {sales_selected.shape[0]} sales
@@ -63,16 +77,96 @@ Part 1:
     st.markdown("""
 ### Sales:
                 """)
+    
+    fig = number_plot(sales,transfers)
+    st.plotly_chart(fig)
+    with st.expander('show data'):
+        st.dataframe(sales)
+        
     st.markdown(
         """
 ### Can we conclude if there are certain types of traits (body, accessory, etc.) that are causing some Nouns to sell or mint for more than others?
-
-
-Part 2: 
+#### Sales
 """)
+    selected_trait = st.selectbox('Select Trait', ['BACKGROUND', 'BODY',
+        'ACCESSORY', 'HEAD', 'GLASSES'],0)
+    with st.expander('Show'):
+        # traits sales
+        merged = get_merged(sales,df)
+        
+        cols = ['BACKGROUND', 'BODY',
+        'ACCESSORY', 'HEAD', 'GLASSES']
+        extra = ['TOKENID','PRICE']
+        merged= sales.merge(df,how='left',on='TOKENID')
+        m = merged[cols+extra].groupby(selected_trait)['PRICE'].agg(['mean','count']).reset_index()
+        mean_price_single = m.sort_values('mean',ascending=False).iloc[0]
+        single = merged[merged[selected_trait]==mean_price_single[selected_trait]][['BLOCK_TIMESTAMP','TOKENID','PRICE',selected_trait]].sort_values('BLOCK_TIMESTAMP',ascending=False).iloc[0]
+        #st.write(single)
+        l,r = st.columns([6,12])
+        with l:
+            st.dataframe(m.sort_values('mean',ascending=False).style.background_gradient(cmap=cm))
+        with r:
+            fig,mean = plot_dist(m)
+            st.plotly_chart(fig,use_container_width=True)
+        l,r = st.columns([10,8])
+        with r:
+            st.markdown(f"""  
+    #  
+    #  
+    #  
+    #      
+    attribute number {int(single[selected_trait])} has been 
+    sold {int(mean_price_single['count'])} times     
+    mean_price: {mean_price_single['mean']:.2f} ETH   
+    max price {single['PRICE']:.2f} ETH  
+
+    mean price across all attributes: {mean:.2f} ETH
+    """)
+        with l:
+            st.write(f'Noun {int(single["TOKENID"])} with the most expensive attribute {int(single[selected_trait])}')
+            get_pic(int(single['TOKENID']))
+            st.write(f"https://nouns.wtf/noun/{int(single['TOKENID'])}")
+            
+    ###############
     st.markdown(
         """
-### Who is typically settling Nouns auctions? 
+#### Mints
+""")
+    with st.expander('Show'):
+        # traits mints
+        merged = get_merged(transfers.query('EVENT_TYPE=="mint"'),df)
+        cols = ['BACKGROUND', 'BODY',
+        'ACCESSORY', 'HEAD', 'GLASSES']
+        extra = ['TOKENID']
+        merged= sales.merge(df,how='left',on='TOKENID')
+        m = merged[cols+extra].groupby(selected_trait)['TOKENID'].agg(['count']).reset_index()
+        mean_price_single = m.sort_values('count',ascending=False).iloc[0]
+        single = merged[merged[selected_trait]==mean_price_single[selected_trait]][['BLOCK_TIMESTAMP','TOKENID',selected_trait]].sort_values('BLOCK_TIMESTAMP',ascending=False).iloc[0]
+        #st.write(single)
+        l,r = st.columns([6,12])
+        with l:
+            st.dataframe(m.sort_values('count',ascending=False).style.background_gradient(cmap=cm))
+        with r:
+            fig,mean = plot_dist_count(m)
+            st.plotly_chart(fig,use_container_width=True)
+        l,r = st.columns([10,8])
+        with r:
+            st.markdown(f"""  
+    #  
+    #  
+    #  
+    #    
+    trait number {int(single[selected_trait])}  has been minted {int(mean_price_single['count'])} times       
+    """)
+        with l:
+            st.write(f'Noun {int(single["TOKENID"])} with the most common attribute {int(single[selected_trait])}')
+            get_pic(int(single['TOKENID']))
+            st.write(f"https://nouns.wtf/noun/{int(single['TOKENID'])}")
+            
+  ###############      
+    st.markdown(
+        """
+### PArt2: Who is typically settling Nouns auctions? 
 """)
     st.markdown(
         """
